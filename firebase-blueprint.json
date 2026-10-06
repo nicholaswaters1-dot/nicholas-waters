@@ -1,0 +1,338 @@
+{
+  "entities": {
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "Public training and games leaderboard entry for a user and their dog",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the pet owner",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Public display name of the pet owner",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "dogName": {
+          "type": "string",
+          "description": "Name of the dog participating in training and games",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "dogBreed": {
+          "type": "string",
+          "description": "Breed of the dog",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "borough": {
+          "type": "string",
+          "description": "UK postcode or borough area",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "pupPoints": {
+          "type": "number",
+          "description": "Total Pup & Academy Points earned from training milestones and games"
+        },
+        "tricksMastered": {
+          "type": "number",
+          "description": "Count of tricks mastered"
+        },
+        "gamesCompleted": {
+          "type": "number",
+          "description": "Count of interactive brain games completed"
+        },
+        "rankTitle": {
+          "type": "string",
+          "description": "Academy rank title earned",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "badges": {
+          "type": "array",
+          "description": "Earned training and academy badge IDs (max 15)",
+          "maxLength": 15
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last update"
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "dogName",
+        "dogBreed",
+        "borough",
+        "pupPoints",
+        "tricksMastered",
+        "gamesCompleted",
+        "rankTitle",
+        "badges",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserPrivateProfile": {
+      "title": "UserPrivateProfile",
+      "description": "Isolated private user profile containing PII and account persona settings",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User email address",
+          "minLength": 3,
+          "maxLength": 120
+        },
+        "persona": {
+          "type": "string",
+          "enum": ["owner", "walker", "kennel", "shelter"],
+          "description": "Selected user account role",
+          "minLength": 4,
+          "maxLength": 20
+        },
+        "postcode": {
+          "type": "string",
+          "description": "UK postcode",
+          "minLength": 2,
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp"
+        }
+      },
+      "required": [
+        "uid",
+        "email",
+        "persona",
+        "postcode",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ShelterDogListing": {
+      "title": "ShelterDogListing",
+      "description": "Public shelter dog adoption listing with activation and adoption status control",
+      "type": "object",
+      "properties": {
+        "dogId": {
+          "type": "string",
+          "description": "Unique shelter dog ID",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdByUid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the shelter staff member who posted the dog",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "shelterId": {
+          "type": "string",
+          "description": "ID of the rescue shelter",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "shelterName": {
+          "type": "string",
+          "description": "Name of the rescue shelter",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the rescue dog",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "breed": {
+          "type": "string",
+          "description": "Dog breed",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "age": {
+          "type": "string",
+          "description": "Dog age string",
+          "minLength": 1,
+          "maxLength": 30
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Available", "Adoption Pending", "Re-homed"],
+          "description": "Current adoption and listing activation status",
+          "minLength": 7,
+          "maxLength": 20
+        },
+        "isActiveListing": {
+          "type": "boolean",
+          "description": "True when active for adoption, false when deactivated/adopted"
+        },
+        "lastDailyUpdate": {
+          "type": "string",
+          "description": "Latest daily care, medical, or walking update logged by shelter staff",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "updatedByStaffName": {
+          "type": "string",
+          "description": "Public first name and role of the shelter staff member who posted the update",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp"
+        }
+      },
+      "required": [
+        "dogId",
+        "createdByUid",
+        "shelterId",
+        "shelterName",
+        "name",
+        "breed",
+        "age",
+        "status",
+        "isActiveListing",
+        "lastDailyUpdate",
+        "updatedByStaffName",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PushNotificationAlert": {
+      "title": "PushNotificationAlert",
+      "description": "Real-time Firebase push notification alert for shelter staff, pet owners, dog walkers, and kennels & stays",
+      "type": "object",
+      "properties": {
+        "notifId": {
+          "type": "string",
+          "description": "Unique push notification ID",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "senderUid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the user who triggered the notification",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "targetRole": {
+          "type": "string",
+          "enum": ["owner", "walker", "kennel", "shelter", "all"],
+          "description": "Recipient role for this push notification",
+          "minLength": 3,
+          "maxLength": 20
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Adoption Inquiry", "New Booking", "New Message", "Kennel Stay", "System Update"],
+          "description": "Category of push alert",
+          "minLength": 5,
+          "maxLength": 30
+        },
+        "title": {
+          "type": "string",
+          "description": "Short notification headline",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "body": {
+          "type": "string",
+          "description": "Notification message body",
+          "minLength": 1,
+          "maxLength": 400
+        },
+        "read": {
+          "type": "boolean",
+          "description": "Whether the notification has been read"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp"
+        }
+      },
+      "required": [
+        "notifId",
+        "senderUid",
+        "targetRole",
+        "category",
+        "title",
+        "body",
+        "read",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/leaderboard/{userId}": {
+      "schema": {
+        "$ref": "#/entities/LeaderboardEntry"
+      },
+      "description": "Public training and games leaderboard entries keyed by userId"
+    },
+    "/users_private/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserPrivateProfile"
+      },
+      "description": "Isolated private user profile documents keyed by userId"
+    },
+    "/shelter_dogs/{dogId}": {
+      "schema": {
+        "$ref": "#/entities/ShelterDogListing"
+      },
+      "description": "Public shelter dog adoption listings with activation/deactivation and daily staff updates"
+    },
+    "/push_notifications/{notifId}": {
+      "schema": {
+        "$ref": "#/entities/PushNotificationAlert"
+      },
+      "description": "Real-time Firebase push notifications for shelter staff, dog owners, walkers, and kennels"
+    }
+  }
+}

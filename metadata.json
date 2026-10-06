@@ -1,0 +1,6 @@
+{
+  "name": "My Paws Walks - Trusted Pet Care & Dog Walking",
+  "description": "Premier trust-first pet care and dog walking platform with verified DBS-checked walkers, live walk tracking, interactive booking, multi-dog profiles, social pack connect, and local pet services directory.",
+  "requestFramePermissions": ["microphone", "geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

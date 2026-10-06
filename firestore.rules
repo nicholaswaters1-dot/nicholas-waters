@@ -1,0 +1,340 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Reusable Hardened Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == 'nicholaswaters1@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // 3. Validation Blueprint: LeaderboardEntry
+    function isValidLeaderboardEntry(data) {
+      return data.keys().hasAll([
+        'uid',
+        'displayName',
+        'dogName',
+        'dogBreed',
+        'borough',
+        'pupPoints',
+        'tricksMastered',
+        'gamesCompleted',
+        'rankTitle',
+        'badges',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'uid',
+        'displayName',
+        'dogName',
+        'dogBreed',
+        'borough',
+        'pupPoints',
+        'tricksMastered',
+        'gamesCompleted',
+        'rankTitle',
+        'badges',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.uid == request.auth.uid &&
+      data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+      data.dogName is string && data.dogName.size() >= 1 && data.dogName.size() <= 60 &&
+      data.dogBreed is string && data.dogBreed.size() >= 1 && data.dogBreed.size() <= 60 &&
+      data.borough is string && data.borough.size() >= 1 && data.borough.size() <= 40 &&
+      data.pupPoints is int && data.pupPoints >= 0 && data.pupPoints <= 1000000 &&
+      data.tricksMastered is int && data.tricksMastered >= 0 && data.tricksMastered <= 500 &&
+      data.gamesCompleted is int && data.gamesCompleted >= 0 && data.gamesCompleted <= 5000 &&
+      data.rankTitle is string && data.rankTitle.size() >= 1 && data.rankTitle.size() <= 60 &&
+      data.badges is list && data.badges.size() <= 15 &&
+      (data.badges.size() == 0 || (data.badges[0] is string && data.badges[0].size() <= 50)) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // 4. Validation Blueprint: UserPrivateProfile
+    function isValidUserPrivateProfile(data) {
+      return data.keys().hasAll([
+        'uid',
+        'email',
+        'persona',
+        'postcode',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'uid',
+        'email',
+        'persona',
+        'postcode',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.uid == request.auth.uid &&
+      data.email is string && data.email.size() >= 3 && data.email.size() <= 120 &&
+      data.persona is string && data.persona.size() >= 4 && data.persona.size() <= 20 &&
+      data.persona in ['owner', 'walker', 'kennel', 'shelter'] &&
+      data.postcode is string && data.postcode.size() >= 2 && data.postcode.size() <= 20 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // 5. Validation Blueprint: ShelterDogListing
+    function isValidShelterDogListing(data) {
+      return data.keys().hasAll([
+        'dogId',
+        'createdByUid',
+        'shelterId',
+        'shelterName',
+        'name',
+        'breed',
+        'age',
+        'status',
+        'isActiveListing',
+        'lastDailyUpdate',
+        'updatedByStaffName',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'dogId',
+        'createdByUid',
+        'shelterId',
+        'shelterName',
+        'name',
+        'breed',
+        'age',
+        'status',
+        'isActiveListing',
+        'lastDailyUpdate',
+        'updatedByStaffName',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.dogId is string && data.dogId.size() >= 1 && data.dogId.size() <= 128 && data.dogId.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.createdByUid is string && data.createdByUid.size() >= 1 && data.createdByUid.size() <= 128 && data.createdByUid.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.createdByUid == request.auth.uid &&
+      data.shelterId is string && data.shelterId.size() >= 1 && data.shelterId.size() <= 64 &&
+      data.shelterName is string && data.shelterName.size() >= 1 && data.shelterName.size() <= 100 &&
+      data.name is string && data.name.size() >= 1 && data.name.size() <= 60 &&
+      data.breed is string && data.breed.size() >= 1 && data.breed.size() <= 60 &&
+      data.age is string && data.age.size() >= 1 && data.age.size() <= 30 &&
+      data.status is string && data.status.size() >= 7 && data.status.size() <= 20 &&
+      data.status in ['Available', 'Adoption Pending', 'Re-homed'] &&
+      data.isActiveListing is bool &&
+      data.lastDailyUpdate is string && data.lastDailyUpdate.size() >= 1 && data.lastDailyUpdate.size() <= 500 &&
+      data.updatedByStaffName is string && data.updatedByStaffName.size() >= 1 && data.updatedByStaffName.size() <= 80 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // 6. Validation Blueprint: PushNotificationAlert
+    function isValidPushNotificationAlert(data) {
+      return data.keys().hasAll([
+        'notifId',
+        'senderUid',
+        'targetRole',
+        'category',
+        'title',
+        'body',
+        'read',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'notifId',
+        'senderUid',
+        'targetRole',
+        'category',
+        'title',
+        'body',
+        'read',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.notifId is string && data.notifId.size() >= 1 && data.notifId.size() <= 128 && data.notifId.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.senderUid is string && data.senderUid.size() >= 1 && data.senderUid.size() <= 128 && data.senderUid.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.senderUid == request.auth.uid &&
+      data.targetRole is string && data.targetRole.size() >= 3 && data.targetRole.size() <= 20 &&
+      data.targetRole in ['owner', 'walker', 'kennel', 'shelter', 'all'] &&
+      data.category is string && data.category.size() >= 5 && data.category.size() <= 30 &&
+      data.category in ['Adoption Inquiry', 'New Booking', 'New Message', 'Kennel Stay', 'System Update'] &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+      data.body is string && data.body.size() >= 1 && data.body.size() <= 400 &&
+      data.read is bool &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // Collection 1: Public Training & Games Leaderboard (No PII)
+    match /leaderboard/{userId} {
+      allow get: if isValidId(userId) && existing().pupPoints >= 0;
+      allow list: if existing().pupPoints >= 0;
+
+      allow create: if isOwner(userId) &&
+        isValidId(userId) &&
+        isValidLeaderboardEntry(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isValidId(userId) &&
+        isValidLeaderboardEntry(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (
+            isOwner(userId) &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'displayName',
+              'dogName',
+              'dogBreed',
+              'borough',
+              'pupPoints',
+              'tricksMastered',
+              'gamesCompleted',
+              'rankTitle',
+              'badges',
+              'updatedAt'
+            ])
+          )
+        );
+
+      allow delete: if isValidId(userId) && (isOwner(userId) || isAdmin());
+    }
+
+    // Collection 2: Isolated Private User Profiles (Contains PII: email, postcode)
+    match /users_private/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if false;
+
+      allow create: if isOwner(userId) &&
+        isValidId(userId) &&
+        isValidUserPrivateProfile(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isValidId(userId) &&
+        isValidUserPrivateProfile(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (
+            isOwner(userId) &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'email',
+              'persona',
+              'postcode',
+              'updatedAt'
+            ])
+          )
+        );
+
+      allow delete: if isValidId(userId) && (isOwner(userId) || isAdmin());
+    }
+
+    // Collection 3: Public Shelter Dog Adoption Listings (No PII)
+    match /shelter_dogs/{dogId} {
+      allow get: if isValidId(dogId) && (existing().isActiveListing == true || isVerifiedUser());
+      allow list: if existing().isActiveListing == true || isVerifiedUser();
+
+      allow create: if isVerifiedUser() &&
+        isValidId(dogId) &&
+        incoming().dogId == dogId &&
+        isValidShelterDogListing(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isValidId(dogId) &&
+        isValidShelterDogListing(incoming()) &&
+        incoming().dogId == existing().dogId &&
+        incoming().createdByUid == existing().createdByUid &&
+        incoming().shelterId == existing().shelterId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (
+            isOwner(existing().createdByUid) &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'name',
+              'breed',
+              'age',
+              'status',
+              'isActiveListing',
+              'lastDailyUpdate',
+              'updatedByStaffName',
+              'updatedAt'
+            ])
+          )
+        );
+
+      allow delete: if isValidId(dogId) && (isOwner(existing().createdByUid) || isAdmin());
+    }
+
+    // Collection 4: Real-Time Push Notification Alerts (No PII)
+    match /push_notifications/{notifId} {
+      allow get: if isSignedIn() && isValidId(notifId) && (existing().senderUid == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().senderUid == request.auth.uid || isAdmin());
+
+      allow create: if isVerifiedUser() &&
+        isValidId(notifId) &&
+        incoming().notifId == notifId &&
+        isValidPushNotificationAlert(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isValidId(notifId) &&
+        isValidPushNotificationAlert(incoming()) &&
+        incoming().notifId == existing().notifId &&
+        incoming().senderUid == existing().senderUid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (
+            isOwner(existing().senderUid) &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'read',
+              'updatedAt'
+            ])
+          )
+        );
+
+      allow delete: if isValidId(notifId) && (isOwner(existing().senderUid) || isAdmin());
+    }
+  }
+}
