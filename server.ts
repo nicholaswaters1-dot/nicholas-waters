@@ -152,6 +152,17 @@ async function startServer() {
     }
   });
 
+  // 3. Android TWA Digital Asset Links & Bundle Manifest Endpoints
+  app.get('/.well-known/assetlinks.json', (_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.sendFile(path.join(__dirname, 'public', '.well-known', 'assetlinks.json'));
+  });
+
+  app.get('/twa-manifest.json', (_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.sendFile(path.join(__dirname, 'twa-manifest.json'));
+  });
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },

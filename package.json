@@ -9,7 +9,11 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "android:bundle-info": "node scripts/build-android-bundle.js info",
+    "android:keystore": "node scripts/build-android-bundle.js keystore",
+    "android:twa-init": "npx @bubblewrap/cli init --manifest=./twa-manifest.json",
+    "android:build-aab": "npx @bubblewrap/cli build"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

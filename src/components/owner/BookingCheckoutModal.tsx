@@ -316,7 +316,7 @@ export const BookingCheckoutModal: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Walks per Week</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Walks per Week (Mon–Sun)</label>
                   <select
                     value={subWalksPerWeek}
                     onChange={(e) => setSubWalksPerWeek(Number(e.target.value))}
@@ -326,6 +326,8 @@ export const BookingCheckoutModal: React.FC = () => {
                     <option value={3}>3 walks / week (10% discount)</option>
                     <option value={4}>4 walks / week (12% discount)</option>
                     <option value={5}>5 walks / week (15% discount)</option>
+                    <option value={6}>6 walks / week incl. Weekend (15% discount)</option>
+                    <option value={7}>7 walks / week Full Mon–Sun (18% discount)</option>
                   </select>
                 </div>
 
@@ -339,15 +341,25 @@ export const BookingCheckoutModal: React.FC = () => {
                     <option value="9:30 AM - 10:30 AM">Morning: 9:30 AM - 10:30 AM</option>
                     <option value="11:00 AM - 12:00 PM">Midday Adventure: 11:00 AM - 12:00 PM</option>
                     <option value="2:00 PM - 3:00 PM">Afternoon: 2:00 PM - 3:00 PM</option>
+                    <option value="10:00 AM - 11:30 AM (Weekend Pack)">Weekend Morning: 10:00 AM - 11:30 AM</option>
+                    <option value="1:00 PM - 2:30 PM (Weekend Stroll)">Weekend Afternoon: 1:00 PM - 2:30 PM</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1.5">Scheduled Recurring Days</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block font-semibold text-slate-700">
+                    Scheduled Recurring Days (Weekdays & Weekends Available)
+                  </label>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
+                    ✓ Saturday & Sunday Weekend Walks Supported
+                  </span>
+                </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day) => {
+                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
                     const active = subDays.includes(day);
+                    const isWeekend = day === 'Saturday' || day === 'Sunday';
                     return (
                       <button
                         key={day}
@@ -359,13 +371,20 @@ export const BookingCheckoutModal: React.FC = () => {
                             setSubDays([...subDays, day]);
                           }
                         }}
-                        className={`px-3 py-1.5 rounded-lg font-semibold transition-colors ${
+                        className={`px-3 py-1.5 rounded-lg font-semibold transition-colors flex items-center gap-1 ${
                           active
                             ? 'bg-[#0f5132] text-white'
-                            : 'bg-white text-slate-700 border border-slate-200'
+                            : isWeekend
+                              ? 'bg-amber-50 text-amber-950 border border-amber-300 hover:bg-amber-100'
+                              : 'bg-white text-slate-700 border border-slate-200'
                         }`}
                       >
-                        {day}
+                        <span>{day}</span>
+                        {isWeekend && (
+                          <span className={`text-[9px] font-extrabold uppercase ${active ? 'text-amber-300' : 'text-amber-700'}`}>
+                            Wknd
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -393,7 +412,7 @@ export const BookingCheckoutModal: React.FC = () => {
                     {
                       type: 'Group Walk' as const,
                       title: 'Group Pack Walk (60 mins)',
-                      desc: 'Social adventure with max 4 dogs.',
+                      desc: 'Social adventure with max 4 dogs · See who is attending below.',
                       price: singleDogBasePrice,
                     },
                     {
@@ -435,6 +454,105 @@ export const BookingCheckoutModal: React.FC = () => {
                 </div>
               </div>
 
+              {/* Group Walk Attending Dogs Roster (Shown when Group Walk is selected) */}
+              {serviceType === 'Group Walk' && (
+                <div className="p-4 rounded-2xl bg-emerald-50/75 border border-emerald-200 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <PawPrint className="w-4 h-4 text-emerald-700" />
+                      <span className="text-xs font-extrabold text-slate-900">
+                        Who Is Attending This Group Walk ({selectedDate} · {timeSlot})
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-bold text-emerald-800 bg-white px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      {Math.min(4, 2 + selectedDogs.length)} / 4 Pack Spots Filled
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600">
+                    All dogs attending {selectedWalker.name.split(' ')[0]}’s group walk are temperament-matched, vaccinated, and friendly:
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {/* Selected user dogs attending */}
+                    {selectedDogs.map((userDog) => (
+                      <div
+                        key={`attending_${userDog.id}`}
+                        className="p-2.5 rounded-xl bg-white border border-emerald-300 flex items-center gap-2.5 shadow-2xs"
+                      >
+                        <img
+                          src={userDog.photoUrl}
+                          alt={userDog.name}
+                          referrerPolicy="no-referrer"
+                          className="w-9 h-9 rounded-full object-cover border border-emerald-200 shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-xs font-extrabold text-slate-900 truncate">
+                              {userDog.name} (Your Dog)
+                            </span>
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                              Joining
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-slate-500 truncate">
+                            {userDog.breed} · {userDog.temperament?.[0] || 'Friendly'}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Confirmed Pack Mates Attending */}
+                    {[
+                      {
+                        id: 'pack_mate_1',
+                        name: 'Barnaby',
+                        owner: 'Sarah M. (NW3)',
+                        breed: 'Golden Retriever (3 yrs)',
+                        trait: 'Gentle & Social',
+                        avatar:
+                          'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=200&q=80',
+                      },
+                      {
+                        id: 'pack_mate_2',
+                        name: 'Poppy',
+                        owner: 'James T. (NW3)',
+                        breed: 'Cockapoo (2 yrs)',
+                        trait: 'Playful Recall Star',
+                        avatar:
+                          'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=200&q=80',
+                      },
+                    ].map((mate) => (
+                      <div
+                        key={mate.id}
+                        className="p-2.5 rounded-xl bg-white/90 border border-slate-200 flex items-center gap-2.5"
+                      >
+                        <img
+                          src={mate.avatar}
+                          alt={mate.name}
+                          referrerPolicy="no-referrer"
+                          className="w-9 h-9 rounded-full object-cover border border-slate-200 shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-xs font-bold text-slate-900 truncate">
+                              {mate.name}
+                            </span>
+                            <span className="text-[10px] font-semibold text-emerald-800">
+                              ✓ Attending
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-slate-500 truncate">
+                            {mate.breed} · Owner: {mate.owner}
+                          </div>
+                          <div className="text-[10px] text-emerald-700 font-medium truncate">
+                            Temperament: {mate.trait}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Walk Duration / Minutes Selector */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-2 flex items-center justify-between">
@@ -467,16 +585,43 @@ export const BookingCheckoutModal: React.FC = () => {
                 </div>
               </div>
 
-              {/* Interactive Walker Availability Calendar & Time Selection */}
+              {/* Interactive Walker Availability Calendar & Weekend Operation Selection */}
               <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>{selectedWalker.name}’s Availability Calendar (Oct 2026)</span>
+                    <span>{selectedWalker.name}’s 7-Day Availability (Weekdays & Weekends Open)</span>
                   </label>
                   <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
                     Selected: {selectedDate}
                   </span>
+                </div>
+
+                {/* Quick Day Type Filter / Weekend Shortcuts */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-slate-500 mr-1">Quick Select:</span>
+                  {[
+                    { label: 'Tomorrow (Fri 02 Oct)', value: 'Tomorrow, 02 Oct 2026', isWeekend: false },
+                    { label: 'This Saturday (03 Oct · Weekend)', value: 'Sat, 03 Oct 2026 (Weekend)', isWeekend: true },
+                    { label: 'This Sunday (04 Oct · Weekend)', value: 'Sun, 04 Oct 2026 (Weekend)', isWeekend: true },
+                    { label: 'Next Saturday (10 Oct · Weekend)', value: 'Sat, 10 Oct 2026 (Weekend)', isWeekend: true },
+                    { label: 'Next Sunday (11 Oct · Weekend)', value: 'Sun, 11 Oct 2026 (Weekend)', isWeekend: true },
+                  ].map((preset) => (
+                    <button
+                      key={preset.value}
+                      type="button"
+                      onClick={() => setSelectedDate(preset.value)}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
+                        selectedDate === preset.value
+                          ? 'bg-[#0f5132] text-white border-[#0f5132]'
+                          : preset.isWeekend
+                            ? 'bg-amber-50 text-amber-950 border-amber-300 hover:bg-amber-100'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
                 </div>
 
                 <div className="grid grid-cols-7 gap-1 text-center text-[9px] font-bold text-slate-400 uppercase">
@@ -485,38 +630,49 @@ export const BookingCheckoutModal: React.FC = () => {
                   <div>Wed</div>
                   <div>Thu</div>
                   <div>Fri</div>
-                  <div>Sat</div>
-                  <div>Sun</div>
+                  <div className="text-amber-700">Sat (Wknd)</div>
+                  <div className="text-amber-700">Sun (Wknd)</div>
                 </div>
 
                 <div className="grid grid-cols-7 gap-1">
                   {[0, 1, 2].map((b) => (
-                    <div key={`chk_blank_${b}`} className="h-8 rounded-lg bg-slate-100/60" />
+                    <div key={`chk_blank_${b}`} className="h-9 rounded-lg bg-slate-100/60" />
                   ))}
                   {Array.from({ length: 14 }, (_, i) => i + 1).map((day) => {
+                    // Oct 1, 2026 is Thursday (col 4). So day 3 & 4 (Sat/Sun) and day 10 & 11 (Sat/Sun) are weekends!
+                    const isSat = day === 3 || day === 10;
+                    const isSun = day === 4 || day === 11;
+                    const isWeekendDay = isSat || isSun;
                     const dateLabel =
                       day === 1
                         ? 'Today, 01 Oct 2026'
                         : day === 2
-                        ? 'Tomorrow, 02 Oct 2026'
-                        : `${day.toString().padStart(2, '0')} Oct 2026`;
-                    const isBookedOut = day === 11;
+                          ? 'Tomorrow, 02 Oct 2026'
+                          : isSat
+                            ? `Sat, ${day.toString().padStart(2, '0')} Oct 2026 (Weekend)`
+                            : isSun
+                              ? `Sun, ${day.toString().padStart(2, '0')} Oct 2026 (Weekend)`
+                              : `${day.toString().padStart(2, '0')} Oct 2026`;
                     const isSelected = selectedDate === dateLabel;
                     return (
                       <button
                         key={day}
                         type="button"
-                        disabled={isBookedOut}
                         onClick={() => setSelectedDate(dateLabel)}
-                        className={`h-8 rounded-lg border text-[10px] font-bold flex flex-col items-center justify-center transition-all ${
+                        className={`h-9 rounded-lg border text-[10px] font-bold flex flex-col items-center justify-center transition-all cursor-pointer ${
                           isSelected
                             ? 'bg-[#0f5132] text-white border-[#0f5132] shadow-2xs'
-                            : isBookedOut
-                            ? 'bg-rose-50 border-rose-200 text-rose-400 line-through cursor-not-allowed'
-                            : 'bg-white border-slate-200 text-slate-800 hover:border-emerald-400 cursor-pointer'
+                            : isWeekendDay
+                              ? 'bg-amber-50/90 border-amber-300 text-amber-950 hover:border-amber-500'
+                              : 'bg-white border-slate-200 text-slate-800 hover:border-emerald-400'
                         }`}
                       >
                         <span>{day} Oct</span>
+                        {isWeekendDay && (
+                          <span className={`text-[8px] font-extrabold uppercase leading-none ${isSelected ? 'text-amber-300' : 'text-amber-700'}`}>
+                            Wknd
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -526,7 +682,7 @@ export const BookingCheckoutModal: React.FC = () => {
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-700 mb-1 flex items-center gap-1">
                       <Calendar className="w-3 h-3 text-slate-400" />
-                      Appointment Date
+                      Appointment Date (Weekdays & Weekends)
                     </label>
                     <input
                       type="text"
@@ -539,17 +695,19 @@ export const BookingCheckoutModal: React.FC = () => {
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-700 mb-1 flex items-center gap-1">
                       <Clock className="w-3 h-3 text-slate-400" />
-                      Available Pickup Window
+                      Available Pickup Window (Mon–Sun)
                     </label>
                     <select
                       value={timeSlot}
                       onChange={(e) => setTimeSlot(e.target.value)}
                       className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-900"
                     >
+                      <option value="8:30 AM - 9:30 AM (Weekend Early Bird)">8:30 AM - 9:30 AM (Early Bird / Weekend)</option>
                       <option value="9:30 AM - 10:30 AM">Morning Early: 9:30 AM - 10:30 AM</option>
                       <option value="11:00 AM - 12:00 PM">Midday Adventure: 11:00 AM - 12:00 PM</option>
                       <option value="1:30 PM - 2:30 PM">Early Afternoon: 1:30 PM - 2:30 PM</option>
                       <option value="3:30 PM - 4:30 PM">Late Afternoon: 3:30 PM - 4:30 PM</option>
+                      <option value="5:00 PM - 6:00 PM (Weekend Sunset Walk)">5:00 PM - 6:00 PM (Weekend Sunset Walk)</option>
                     </select>
                   </div>
                 </div>

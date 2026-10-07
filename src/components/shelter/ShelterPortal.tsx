@@ -43,6 +43,7 @@ const PRESET_DOG_PHOTOS = [
 
 export const ShelterPortal: React.FC = () => {
   const {
+    persona,
     shelters,
     activeShelter,
     setActiveShelterId,
@@ -67,6 +68,9 @@ export const ShelterPortal: React.FC = () => {
     setHowToUseModalOpen,
     showToast,
   } = useMarketplace();
+
+  // Strictly enforce that ONLY the shelter user (persona === 'shelter') can activate/deactivate adoption or edit the shelter page
+  const isShelterUser = persona === 'shelter';
 
   const [activeTab, setActiveTab] = useState<
     'dogs' | 'staff-command' | 'visits' | 'walks' | 'donations' | 'all-shelters'
@@ -138,6 +142,10 @@ export const ShelterPortal: React.FC = () => {
 
   const handleUploadNewDog = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isShelterUser) {
+      showToast('Access Restricted: Only authorized Shelter Users can upload or edit shelter dogs.', 'warning');
+      return;
+    }
     if (!newDogName.trim() || !newDogBreed.trim()) {
       showToast('Please enter the dog name and breed', 'warning');
       return;
@@ -199,6 +207,10 @@ export const ShelterPortal: React.FC = () => {
   };
 
   const handleToggleDogActivation = async (dog: ShelterDog) => {
+    if (!isShelterUser) {
+      showToast('Access Restricted: Only the Shelter User can activate or deactivate adoption listings.', 'warning');
+      return;
+    }
     const currentlyActive = dog.isActiveListing !== false && dog.status !== 'Re-homed';
     if (currentlyActive) {
       // Open confirmation modal to mark as Adopted / Re-homed or Deactivate
@@ -231,6 +243,10 @@ export const ShelterPortal: React.FC = () => {
 
   const handleConfirmAdoptedOrDeactivate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isShelterUser) {
+      showToast('Access Restricted: Only the Shelter User can deactivate adoption listings.', 'warning');
+      return;
+    }
     if (!adoptConfirmModalDog) return;
     updateShelterDogStatus(
       adoptConfirmModalDog.id,
@@ -262,6 +278,10 @@ export const ShelterPortal: React.FC = () => {
 
   const handlePostDailyUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isShelterUser) {
+      showToast('Access Restricted: Only the Shelter User can post daily care updates.', 'warning');
+      return;
+    }
     if (!dailyUpdateModalDog || !updateNote.trim()) return;
     addShelterDogDailyUpdate(dailyUpdateModalDog.id, updateCategory, updateNote.trim());
     if (auth.currentUser) {
@@ -289,6 +309,10 @@ export const ShelterPortal: React.FC = () => {
 
   const handleCreateStaffMember = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isShelterUser) {
+      showToast('Access Restricted: Only the Shelter User can manage shelter staff accounts.', 'warning');
+      return;
+    }
     if (!staffName.trim() || !staffEmail.trim()) {
       showToast('Please enter staff name and login email', 'warning');
       return;
@@ -389,21 +413,30 @@ export const ShelterPortal: React.FC = () => {
               {activeShelter.description}
             </p>
             <div className="flex flex-wrap items-center gap-2.5 pt-1">
-              <button
-                onClick={() => setUploadDogModalOpen(true)}
-                className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs flex items-center gap-2 shadow-sm transition-all min-h-[44px]"
-              >
-                <Upload className="w-4 h-4" />
-                <span>+ Post / Upload New Dog for Adoption</span>
-              </button>
+              {isShelterUser ? (
+                <>
+                  <button
+                    onClick={() => setUploadDogModalOpen(true)}
+                    className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs flex items-center gap-2 shadow-sm transition-all min-h-[44px]"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>+ Post / Upload New Dog for Adoption</span>
+                  </button>
 
-              <button
-                onClick={() => setActiveTab('staff-command')}
-                className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs flex items-center gap-2 border border-white/20 transition-all min-h-[44px]"
-              >
-                <Users className="w-4 h-4 text-emerald-300" />
-                <span>Multi-User Staff Logins & Daily Updates</span>
-              </button>
+                  <button
+                    onClick={() => setActiveTab('staff-command')}
+                    className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs flex items-center gap-2 border border-white/20 transition-all min-h-[44px]"
+                  >
+                    <Users className="w-4 h-4 text-emerald-300" />
+                    <span>Multi-User Staff Logins & Daily Updates</span>
+                  </button>
+                </>
+              ) : (
+                <div className="px-3.5 py-2 rounded-xl bg-white/10 border border-white/20 text-emerald-200 text-xs font-bold flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-300 shrink-0" />
+                  <span>Read-Only Adoption & Volunteer View · Only the Shelter User can activate/deactivate adoptions or edit this page</span>
+                </div>
+              )}
 
               <button
                 onClick={() => setHowToUseModalOpen(true)}
@@ -417,14 +450,16 @@ export const ShelterPortal: React.FC = () => {
 
           {/* Shelter Staff Multi-User Switcher & Contact Info */}
           <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 sm:p-5 space-y-3 shrink-0">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider">
-                Logged-In Shelter User:
-              </span>
-              <ShelterStaffSwitcher />
-            </div>
+            {isShelterUser && (
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider">
+                  Logged-In Shelter User:
+                </span>
+                <ShelterStaffSwitcher />
+              </div>
+            )}
 
-            <div className="text-[11px] font-bold text-emerald-200 uppercase tracking-wider pt-1 border-t border-white/10">
+            <div className={`text-[11px] font-bold text-emerald-200 uppercase tracking-wider ${isShelterUser ? 'pt-1 border-t border-white/10' : ''}`}>
               Switch Active Shelter Branch:
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -447,40 +482,42 @@ export const ShelterPortal: React.FC = () => {
               <div className="flex items-center justify-between gap-2 text-[11px] text-emerald-200 font-bold">
                 <span className="flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Shelter Postcode (Required):</span>
+                  <span>Shelter Postcode:</span>
                 </span>
                 <span className="font-mono text-white bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/40">
                   {activeShelter.postcode || `${activeShelter.postcodeArea} 1AA`}
                 </span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="text"
-                  value={activeShelter.postcode || `${activeShelter.postcodeArea} 1AA`}
-                  onChange={(e) => {
-                    const val = e.target.value.toUpperCase();
-                    const outcode = val.trim().split(' ')[0] || activeShelter.postcodeArea;
-                    updateShelterProfile(activeShelter.id, {
-                      postcode: val,
-                      postcodeArea: outcode,
-                    });
-                  }}
-                  placeholder="Enter UK Postcode (e.g. SW8 4BG)"
-                  className="flex-1 px-2.5 py-1.5 rounded-lg bg-white/15 border border-white/25 text-white placeholder-emerald-200/60 text-xs font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-amber-400"
-                />
-                <button
-                  type="button"
-                  onClick={() =>
-                    showToast(
-                      `Saved shelter postcode (${activeShelter.postcode || activeShelter.postcodeArea}) for ${activeShelter.name}!`,
-                      'success'
-                    )
-                  }
-                  className="px-2.5 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-[11px] font-black shrink-0 cursor-pointer"
-                >
-                  Save Postcode
-                </button>
-              </div>
+              {isShelterUser && (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    value={activeShelter.postcode || `${activeShelter.postcodeArea} 1AA`}
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      const outcode = val.trim().split(' ')[0] || activeShelter.postcodeArea;
+                      updateShelterProfile(activeShelter.id, {
+                        postcode: val,
+                        postcodeArea: outcode,
+                      });
+                    }}
+                    placeholder="Enter UK Postcode (e.g. SW8 4BG)"
+                    className="flex-1 px-2.5 py-1.5 rounded-lg bg-white/15 border border-white/25 text-white placeholder-emerald-200/60 text-xs font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      showToast(
+                        `Saved shelter postcode (${activeShelter.postcode || activeShelter.postcodeArea}) for ${activeShelter.name}!`,
+                        'success'
+                      )
+                    }
+                    className="px-2.5 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-[11px] font-black shrink-0 cursor-pointer"
+                  >
+                    Save Postcode
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="text-[11px] text-emerald-100 flex items-center justify-between gap-2 pt-1 border-t border-white/10">
@@ -503,7 +540,7 @@ export const ShelterPortal: React.FC = () => {
       <SponsoredAdBanner category="Veterinary Hospital" />
 
       {/* Mobile-Friendly Segmented Navigation Tabs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xs text-xs font-bold">
+      <div className={`grid grid-cols-2 sm:grid-cols-3 ${isShelterUser ? 'lg:grid-cols-6' : 'lg:grid-cols-5'} gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xs text-xs font-bold`}>
         <button
           onClick={() => setActiveTab('dogs')}
           className={`px-3 py-3 rounded-xl flex items-center justify-center gap-2 transition-all min-h-[46px] ${
@@ -516,17 +553,19 @@ export const ShelterPortal: React.FC = () => {
           <span>Adoptable Dogs ({currentShelterDogs.length})</span>
         </button>
 
-        <button
-          onClick={() => setActiveTab('staff-command')}
-          className={`px-3 py-3 rounded-xl flex items-center justify-center gap-2 transition-all min-h-[46px] ${
-            activeTab === 'staff-command'
-              ? 'bg-[#0f5132] text-white shadow-xs'
-              : 'text-slate-700 hover:bg-slate-100'
-          }`}
-        >
-          <Sliders className="w-4 h-4 text-amber-500 shrink-0" />
-          <span>Staff & Daily Updates</span>
-        </button>
+        {isShelterUser && (
+          <button
+            onClick={() => setActiveTab('staff-command')}
+            className={`px-3 py-3 rounded-xl flex items-center justify-center gap-2 transition-all min-h-[46px] ${
+              activeTab === 'staff-command'
+                ? 'bg-[#0f5132] text-white shadow-xs'
+                : 'text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            <Sliders className="w-4 h-4 text-amber-500 shrink-0" />
+            <span>Staff & Daily Updates</span>
+          </button>
+        )}
 
         <button
           onClick={() => setActiveTab('visits')}
@@ -584,10 +623,20 @@ export const ShelterPortal: React.FC = () => {
           <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
             <div className="space-y-1">
               <h2 className="text-base sm:text-lg font-extrabold text-slate-900">
-                Adoption Listings & Status Control — {activeShelter.name}
+                {isShelterUser
+                  ? `Adoption Listings & Status Control — ${activeShelter.name}`
+                  : `Adoptable Dogs at ${activeShelter.name}`}
               </h2>
               <p className="text-xs text-slate-500">
-                Logged in as <strong>{activeShelterStaff.name} ({activeShelterStaff.role})</strong>. Post new dogs, log daily updates, or deactivate listings when adopted.
+                {isShelterUser ? (
+                  <>
+                    Logged in as <strong>{activeShelterStaff.name} ({activeShelterStaff.role})</strong>. Post new dogs, log daily updates, or deactivate listings when adopted.
+                  </>
+                ) : (
+                  <>
+                    Browse dogs available for adoption, book a meet-and-greet visit, or volunteer for a free shelter walk. (Only Shelter Users can edit listings or toggle adoption status.)
+                  </>
+                )}
               </p>
             </div>
 
@@ -606,13 +655,15 @@ export const ShelterPortal: React.FC = () => {
                 </button>
               ))}
 
-              <button
-                onClick={() => setUploadDogModalOpen(true)}
-                className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-2xs min-h-[40px]"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Upload New Dog</span>
-              </button>
+              {isShelterUser && (
+                <button
+                  onClick={() => setUploadDogModalOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-2xs min-h-[40px]"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Upload New Dog</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -660,22 +711,24 @@ export const ShelterPortal: React.FC = () => {
                           {dog.gender} · {dog.age}
                         </span>
 
-                        {/* Staff One-Tap Activate / Deactivate Toggle */}
-                        <button
-                          onClick={() => handleToggleDogActivation(dog)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md transition-all ${
-                            isListingActive
-                              ? 'bg-rose-600 hover:bg-rose-700 text-white'
-                              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                          }`}
-                        >
-                          <Power className="w-3.5 h-3.5" />
-                          <span>
-                            {isListingActive
-                              ? 'Mark Adopted / Deactivate'
-                              : 'Reactivate Adoption Listing'}
-                          </span>
-                        </button>
+                        {/* Staff One-Tap Activate / Deactivate Toggle (Strictly Shelter User Only) */}
+                        {isShelterUser && (
+                          <button
+                            onClick={() => handleToggleDogActivation(dog)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md transition-all ${
+                              isListingActive
+                                ? 'bg-rose-600 hover:bg-rose-700 text-white'
+                                : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                            }`}
+                          >
+                            <Power className="w-3.5 h-3.5" />
+                            <span>
+                              {isListingActive
+                                ? 'Mark Adopted / Deactivate'
+                                : 'Reactivate Adoption Listing'}
+                            </span>
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -689,25 +742,27 @@ export const ShelterPortal: React.FC = () => {
                           </p>
                         </div>
 
-                        <div className="flex items-center gap-1.5">
-                          <select
-                            value={dog.status}
-                            onChange={(e) => {
-                              const nextStatus = e.target.value as ShelterDog['status'];
-                              updateShelterDogStatus(
-                                dog.id,
-                                nextStatus,
-                                nextStatus !== 'Re-homed'
-                              );
-                            }}
-                            aria-label={`Change adoption status for ${dog.name}`}
-                            className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-800"
-                          >
-                            <option value="Available">Status: Available</option>
-                            <option value="Adoption Pending">Status: Adoption Pending</option>
-                            <option value="Re-homed">Status: Adopted / Re-homed</option>
-                          </select>
-                        </div>
+                        {isShelterUser && (
+                          <div className="flex items-center gap-1.5">
+                            <select
+                              value={dog.status}
+                              onChange={(e) => {
+                                const nextStatus = e.target.value as ShelterDog['status'];
+                                updateShelterDogStatus(
+                                  dog.id,
+                                  nextStatus,
+                                  nextStatus !== 'Re-homed'
+                                );
+                              }}
+                              aria-label={`Change adoption status for ${dog.name}`}
+                              className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-800"
+                            >
+                              <option value="Available">Status: Available</option>
+                              <option value="Adoption Pending">Status: Adoption Pending</option>
+                              <option value="Re-homed">Status: Adopted / Re-homed</option>
+                            </select>
+                          </div>
+                        )}
                       </div>
 
                       {/* Clean Unboxed Compatibility Metadata */}
@@ -749,7 +804,7 @@ export const ShelterPortal: React.FC = () => {
                   </div>
 
                   {/* Mobile-Friendly Card Actions */}
-                  <div className="p-5 pt-0 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className={`p-5 pt-0 grid grid-cols-2 ${isShelterUser ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-2`}>
                     <button
                       onClick={() => setDetailModalDog(dog)}
                       className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors min-h-[42px]"
@@ -757,15 +812,17 @@ export const ShelterPortal: React.FC = () => {
                       Full Story
                     </button>
 
-                    <button
-                      onClick={() => {
-                        setDailyUpdateModalDog(dog);
-                        setUpdateNote('');
-                      }}
-                      className="py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100 text-[#0f5132] border border-emerald-200 rounded-xl text-xs font-bold transition-colors min-h-[42px]"
-                    >
-                      + Daily Update
-                    </button>
+                    {isShelterUser && (
+                      <button
+                        onClick={() => {
+                          setDailyUpdateModalDog(dog);
+                          setUpdateNote('');
+                        }}
+                        className="py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100 text-[#0f5132] border border-emerald-200 rounded-xl text-xs font-bold transition-colors min-h-[42px]"
+                      >
+                        + Daily Update
+                      </button>
+                    )}
 
                     <button
                       disabled={!isListingActive}
@@ -790,8 +847,8 @@ export const ShelterPortal: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: MULTI-USER STAFF ACCOUNTS & DAILY CARE UPDATES COMMAND DESK */}
-      {activeTab === 'staff-command' && (
+      {/* TAB 2: MULTI-USER STAFF ACCOUNTS & DAILY CARE UPDATES COMMAND DESK (Shelter User Only) */}
+      {activeTab === 'staff-command' && isShelterUser && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left 7 Cols: Multi-User Shelter Staff Login Roster */}
           <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-5">
@@ -1149,7 +1206,7 @@ export const ShelterPortal: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2 self-end md:self-auto">
-                  {visit.status === 'Confirmed' && (
+                  {isShelterUser && visit.status === 'Confirmed' && (
                     <button
                       onClick={() => updateVisitStatus(visit.id, 'Completed')}
                       className="px-4 py-2 bg-[#0f5132] text-white font-bold text-xs rounded-xl shadow-xs min-h-[40px]"
@@ -1273,7 +1330,7 @@ export const ShelterPortal: React.FC = () => {
                   </div>
                   <p className="text-slate-700">"{req.description}"</p>
 
-                  {req.status === 'Pending Review' && (
+                  {isShelterUser && req.status === 'Pending Review' && (
                     <div className="pt-2 flex items-center justify-end gap-2">
                       <button
                         onClick={() =>

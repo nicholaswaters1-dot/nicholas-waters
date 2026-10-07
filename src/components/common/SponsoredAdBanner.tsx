@@ -13,7 +13,7 @@ export const SponsoredAdBanner: React.FC<SponsoredAdBannerProps> = ({
   category,
   className = '',
 }) => {
-  const { localBusinesses, setOwnerTab, setAdvertiseModalOpen } = useMarketplace();
+  const { localBusinesses, setPersona, setOwnerTab, setAdvertiseModalOpen } = useMarketplace();
 
   // Find matching sponsored partner
   const matchingAd = localBusinesses.find((b) => {
@@ -84,13 +84,14 @@ export const SponsoredAdBanner: React.FC<SponsoredAdBannerProps> = ({
           <button
             type="button"
             onClick={() => {
+              setPersona('owner');
               setOwnerTab('directory');
               setAdvertiseModalOpen(true);
             }}
             className="px-3 py-1.5 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-lg transition-colors flex items-center gap-1 shadow-2xs whitespace-nowrap cursor-pointer"
           >
             <Sparkles className="w-3 h-3" />
-            <span>Advertise (£9.99/mo)</span>
+            <span>Business / Advertise Sign Up (£9.99/mo)</span>
           </button>
 
           <button

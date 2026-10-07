@@ -765,9 +765,13 @@ export const Navbar: React.FC = () => {
 
             {/* Catch Businesses - Prominent Advertise Button */}
             <button
-              onClick={() => setAdvertiseModalOpen(true)}
+              onClick={() => {
+                setPersona('owner');
+                setOwnerTab('directory');
+                setAdvertiseModalOpen(true);
+              }}
               className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-emerald-900 bg-emerald-100/90 hover:bg-emerald-200 border border-emerald-300 rounded-xl transition-all shadow-2xs cursor-pointer"
-              title="Advertise your pet business from £6.99/mo"
+              title="Sign up & advertise your pet business (£9.99/mo)"
             >
               <PlusCircle className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
               <span>Advertise</span>

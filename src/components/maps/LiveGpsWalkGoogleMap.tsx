@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Map, AdvancedMarker, InfoWindow, useMap } from '@vis.gl/react-google-maps';
 import { LocalBusinessAd } from '../../types';
-import { DEFAULT_MAP_ID } from '../../services/googleMapsConfig';
+import {
+  DEFAULT_MAP_ID,
+  getCoordinatesForUkAddressAndPostcode,
+} from '../../services/googleMapsConfig';
 import { ASSET_PATHS } from '../../data/initialData';
 import { Phone, Tag, Star, Home, Radio, MapPin } from 'lucide-react';
 
@@ -62,6 +65,20 @@ export const LiveGpsWalkGoogleMap: React.FC<LiveGpsWalkGoogleMapProps> = ({
     setActiveWindow(selectedBusiness);
   }, [selectedBusiness]);
 
+  const resolveCoords = (b: LocalBusinessAd) => {
+    if (b.coordinates && typeof b.coordinates.lat === 'number' && typeof b.coordinates.lng === 'number') {
+      return b.coordinates;
+    }
+    if (b.mapCoordinates && typeof b.mapCoordinates.lat === 'number' && typeof b.mapCoordinates.lng === 'number') {
+      return b.mapCoordinates;
+    }
+    return getCoordinatesForUkAddressAndPostcode(
+      b.address || '',
+      b.postcode || b.postcodeArea || 'NW3',
+      b.businessName
+    );
+  };
+
   const walkerPos = WALK_ROUTE_COORDS[WALK_ROUTE_COORDS.length - 1];
   const pickupPos = WALK_ROUTE_COORDS[0];
 
@@ -111,52 +128,51 @@ export const LiveGpsWalkGoogleMap: React.FC<LiveGpsWalkGoogleMapProps> = ({
 
         {/* Dog-Friendly Venues & Vets Pins */}
         {showBusinesses &&
-          nearbyBusinesses
-            .filter((b) => b.coordinates)
-            .map((b) => {
-              const isSelected = activeWindow?.id === b.id;
-              let icon = '🐾';
-              let badgeColor = 'bg-emerald-600';
-              if (b.category === 'Dog Friendly Places to Eat') {
-                icon = '🍽️';
-                badgeColor = 'bg-amber-600';
-              } else if (b.category === 'Dog Friendly Places to Stay') {
-                icon = '🏨';
-                badgeColor = 'bg-indigo-600';
-              } else if (b.category === 'Dog Friendly Shopping') {
-                icon = '🛍️';
-                badgeColor = 'bg-emerald-600';
-              } else if (b.category === 'Veterinary Hospital') {
-                icon = '🏥';
-                badgeColor = 'bg-rose-600';
-              }
+          nearbyBusinesses.map((b) => {
+            const isSelected = activeWindow?.id === b.id;
+            const pos = resolveCoords(b);
+            let icon = '🐾';
+            let badgeColor = 'bg-emerald-600';
+            if (b.category === 'Dog Friendly Places to Eat') {
+              icon = '🍽️';
+              badgeColor = 'bg-amber-600';
+            } else if (b.category === 'Dog Friendly Places to Stay') {
+              icon = '🏨';
+              badgeColor = 'bg-indigo-600';
+            } else if (b.category === 'Dog Friendly Shopping') {
+              icon = '🛍️';
+              badgeColor = 'bg-emerald-600';
+            } else if (b.category === 'Veterinary Hospital') {
+              icon = '🏥';
+              badgeColor = 'bg-rose-600';
+            }
 
-              return (
-                <AdvancedMarker
-                  key={b.id}
-                  position={b.coordinates!}
-                  onClick={() => {
-                    setActiveWindow(b);
-                    onSelectBusiness(b);
-                  }}
-                  title={b.businessName}
+            return (
+              <AdvancedMarker
+                key={b.id}
+                position={pos}
+                onClick={() => {
+                  setActiveWindow(b);
+                  onSelectBusiness(b);
+                }}
+                title={`${b.businessName} — ${b.address}`}
+              >
+                <div
+                  className={`flex items-center gap-1 text-white px-2 py-0.5 rounded-full shadow-md text-[10px] font-bold border border-white cursor-pointer transition-transform ${badgeColor} ${
+                    isSelected ? 'scale-125 ring-2 ring-white z-30' : 'hover:scale-110 z-10'
+                  }`}
                 >
-                  <div
-                    className={`flex items-center gap-1 text-white px-2 py-0.5 rounded-full shadow-md text-[10px] font-bold border border-white cursor-pointer transition-transform ${badgeColor} ${
-                      isSelected ? 'scale-125 ring-2 ring-white z-30' : 'hover:scale-110 z-10'
-                    }`}
-                  >
-                    <span>{icon}</span>
-                    <span className="max-w-[70px] truncate">{b.businessName.split(' ')[0]}</span>
-                  </div>
-                </AdvancedMarker>
-              );
-            })}
+                  <span>{icon}</span>
+                  <span className="max-w-[70px] truncate">{b.businessName.split(' ')[0]}</span>
+                </div>
+              </AdvancedMarker>
+            );
+          })}
 
         {/* Selected Business InfoWindow */}
-        {activeWindow && activeWindow.coordinates && (
+        {activeWindow && (
           <InfoWindow
-            position={activeWindow.coordinates}
+            position={resolveCoords(activeWindow)}
             onCloseClick={() => {
               setActiveWindow(null);
               onSelectBusiness(null);

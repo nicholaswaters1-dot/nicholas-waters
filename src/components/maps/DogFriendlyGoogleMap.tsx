@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Map, AdvancedMarker, InfoWindow, useMap } from '@vis.gl/react-google-maps';
 import { LocalBusinessAd } from '../../types';
-import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ID } from '../../services/googleMapsConfig';
+import {
+  DEFAULT_MAP_CENTER,
+  DEFAULT_MAP_ID,
+  getCoordinatesForUkAddressAndPostcode,
+} from '../../services/googleMapsConfig';
 import { Star, Phone, ExternalLink, MapPin, Tag, X, Sparkles, Navigation } from 'lucide-react';
 
 interface DogFriendlyGoogleMapProps {
@@ -51,7 +55,7 @@ const CategoryMarkerIcon: React.FC<{ category: string; isSelected: boolean }> = 
   );
 };
 
-// Pan to selected business when clicked from list
+// Pan to selected business when clicked from list or added
 const MapPanController: React.FC<{ targetCoords: { lat: number; lng: number } | null }> = ({ targetCoords }) => {
   const map = useMap();
   useEffect(() => {
@@ -77,6 +81,22 @@ export const DogFriendlyGoogleMap: React.FC<DogFriendlyGoogleMapProps> = ({
     setActiveWindowBusiness(selectedBusiness);
   }, [selectedBusiness]);
 
+  const resolveBusinessCoords = (b: LocalBusinessAd) => {
+    if (b.coordinates && typeof b.coordinates.lat === 'number' && typeof b.coordinates.lng === 'number') {
+      return b.coordinates;
+    }
+    if (b.mapCoordinates && typeof b.mapCoordinates.lat === 'number' && typeof b.mapCoordinates.lng === 'number') {
+      return b.mapCoordinates;
+    }
+    return getCoordinatesForUkAddressAndPostcode(
+      b.address || '',
+      b.postcode || b.postcodeArea || 'NW3',
+      b.businessName
+    );
+  };
+
+  const targetCoords = selectedBusiness ? resolveBusinessCoords(selectedBusiness) : null;
+
   return (
     <div className={`relative w-full ${heightClass} rounded-2xl overflow-hidden border border-slate-200 shadow-inner bg-slate-100`}>
       <Map
@@ -89,22 +109,23 @@ export const DogFriendlyGoogleMap: React.FC<DogFriendlyGoogleMapProps> = ({
         streetViewControl={false}
         className="w-full h-full"
       >
-        <MapPanController targetCoords={selectedBusiness?.coordinates || null} />
+        <MapPanController targetCoords={targetCoords} />
 
-        {/* Render markers for businesses that have coordinates */}
+        {/* Render markers for all active businesses positioned by address & postcode */}
         {businesses
-          .filter((b) => b.coordinates && b.status === 'Active')
+          .filter((b) => b.status === 'Active')
           .map((business) => {
             const isSelected = activeWindowBusiness?.id === business.id;
+            const pos = resolveBusinessCoords(business);
             return (
               <AdvancedMarker
                 key={business.id}
-                position={business.coordinates!}
+                position={pos}
                 onClick={() => {
                   setActiveWindowBusiness(business);
                   onSelectBusiness(business);
                 }}
-                title={business.businessName}
+                title={`${business.businessName} — ${business.address} (${business.postcode || business.postcodeArea})`}
               >
                 <CategoryMarkerIcon category={business.category} isSelected={isSelected} />
               </AdvancedMarker>
@@ -112,9 +133,9 @@ export const DogFriendlyGoogleMap: React.FC<DogFriendlyGoogleMapProps> = ({
           })}
 
         {/* InfoWindow for clicked venue */}
-        {activeWindowBusiness && activeWindowBusiness.coordinates && (
+        {activeWindowBusiness && (
           <InfoWindow
-            position={activeWindowBusiness.coordinates}
+            position={resolveBusinessCoords(activeWindowBusiness)}
             onCloseClick={() => {
               setActiveWindowBusiness(null);
               onSelectBusiness(null);

@@ -1,0 +1,64 @@
+{
+  "packageId": "uk.co.mypawswalks.app",
+  "host": "mypawswalks.co.uk",
+  "name": "My Paws Walks",
+  "launcherName": "PawsWalks",
+  "display": "standalone",
+  "themeColor": "#0f5132",
+  "themeColorDark": "#072417",
+  "navigationColor": "#0f5132",
+  "navigationColorDark": "#072417",
+  "navigationDividerColor": "#0f5132",
+  "navigationDividerColorDark": "#072417",
+  "backgroundColor": "#0f5132",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://mypawswalks.co.uk/pwa-512x512.png",
+  "maskableIconUrl": "https://mypawswalks.co.uk/pwa-maskable-512x512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android-release-key.keystore",
+    "alias": "mypawswalks-key"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Find Dog Walkers",
+      "shortName": "Walkers",
+      "url": "/?tab=discover",
+      "chosenIconUrl": "https://mypawswalks.co.uk/pwa-192x192.png"
+    },
+    {
+      "name": "Kennels & Stays",
+      "shortName": "Kennels",
+      "url": "/?tab=kennels",
+      "chosenIconUrl": "https://mypawswalks.co.uk/pwa-192x192.png"
+    },
+    {
+      "name": "Live GPS Walk",
+      "shortName": "Live Walk",
+      "url": "/?tab=live-walk",
+      "chosenIconUrl": "https://mypawswalks.co.uk/pwa-192x192.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://mypawswalks.co.uk/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": {
+      "enabled": true
+    },
+    "playBilling": {
+      "enabled": false
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "minSdkVersion": 21,
+  "orientation": "portrait"
+}

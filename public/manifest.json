@@ -6,31 +6,45 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "window-controls-overlay"],
   "orientation": "portrait",
   "theme_color": "#0f5132",
   "background_color": "#0f5132",
-  "categories": ["lifestyle", "utilities"],
+  "lang": "en-GB",
+  "dir": "ltr",
+  "categories": ["lifestyle", "utilities", "navigation"],
+  "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=uk.co.mypawswalks.app",
+      "id": "uk.co.mypawswalks.app"
+    }
+  ],
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
   "shortcuts": [
     {
       "name": "Find Dog Walkers",
       "short_name": "Walkers",
       "description": "Search DBS-verified dog walkers nearby",
       "url": "/?tab=discover",
-      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Kennels & Stays",
       "short_name": "Kennels",
       "description": "Book DEFRA 5-star overnight pet boarding",
       "url": "/?tab=kennels",
-      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Live GPS Walk",
       "short_name": "Live Walk",
       "description": "Follow live walk path and dog telemetry",
       "url": "/?tab=live-walk",
-      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],
   "icons": [
@@ -58,5 +72,22 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "screenshots": [
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "My Paws Walks Mobile Discovery & Live GPS Tracking"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "My Paws Walks Desktop & Tablet Command Hub"
+    }
   ]
 }
+

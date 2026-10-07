@@ -334,15 +334,21 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({ isOpen, onCl
 
             {/* Advertise Your Pet Business */}
             <button
-              onClick={() => handleSelectTab(() => setAdvertiseModalOpen(true))}
+              onClick={() =>
+                handleSelectTab(() => {
+                  setPersona('owner');
+                  setOwnerTab('directory');
+                  setAdvertiseModalOpen(true);
+                })
+              }
               className="w-full flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 text-emerald-950 font-bold text-xs"
             >
               <div className="flex items-center gap-2">
                 <PlusCircle className="w-4 h-4 text-emerald-700" />
-                <span>Advertise Your Pet Business</span>
+                <span>Advertise Your Pet Business (Sign Up)</span>
               </div>
               <span className="text-[10px] text-emerald-700 font-extrabold bg-white px-2 py-0.5 rounded-full border border-emerald-200">
-                From £0 / £6.99/mo
+                £9.99/mo
               </span>
             </button>
 

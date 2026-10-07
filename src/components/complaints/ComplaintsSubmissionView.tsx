@@ -23,8 +23,23 @@ export const ComplaintsSubmissionView: React.FC = () => {
     complaints,
     submitComplaint,
     activeHouseholdMember,
+    currentUserEmail,
+    isAuthorizedAdmin,
     showToast,
   } = useMarketplace();
+
+  // Only the user who submitted a complaint can see their own complaints (no other user can see them)
+  const userVisibleComplaints = complaints.filter((comp) => {
+    if (isAuthorizedAdmin) return true;
+    const activeEmail = (currentUserEmail || activeHouseholdMember.email || '').trim().toLowerCase();
+    const activeName = (activeHouseholdMember.name || '').trim().toLowerCase();
+    const compEmail = (comp.submitterEmail || '').trim().toLowerCase();
+    const compName = (comp.submittedBy || '').trim().toLowerCase();
+    return (
+      (activeEmail && compEmail === activeEmail) ||
+      (activeName && compName === activeName)
+    );
+  });
 
   const [category, setCategory] = useState<ComplaintTicket['category']>('Walker Tardiness or Conduct');
   const [involvedParty, setInvolvedParty] = useState('');
@@ -46,7 +61,7 @@ export const ComplaintsSubmissionView: React.FC = () => {
     submitComplaint({
       submittedBy: activeHouseholdMember.name,
       submitterRole: 'Pet Owner',
-      submitterEmail: activeHouseholdMember.email,
+      submitterEmail: currentUserEmail || activeHouseholdMember.email,
       submitterPhone: activeHouseholdMember.phone,
       category,
       involvedPartyName: involvedParty.trim(),
@@ -71,13 +86,13 @@ export const ComplaintsSubmissionView: React.FC = () => {
         <div className="max-w-2xl space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-950/80 border border-red-500/30 text-rose-300 text-xs font-semibold">
             <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
-            <span>Safety, Trust & Grievance Desk</span>
+            <span>Safety, Trust & Grievance Desk · Private to Your Account</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             Complaints & Incident Reporting
           </h1>
           <p className="text-xs sm:text-sm text-rose-100 leading-relaxed">
-            We hold every walker, kennel boarding host, and advertised business to the highest standard of animal welfare. All grievances are formally vetted by our UK Compliance Officers with statutory escrow dispute protections.
+            We hold every walker, kennel boarding host, and advertised business to the highest standard of animal welfare. All grievances are strictly confidential — <strong>only you can see your own submitted complaints</strong>, and no other user can view them.
           </p>
         </div>
       </div>
@@ -95,11 +110,11 @@ export const ComplaintsSubmissionView: React.FC = () => {
                 <span>Submit Formal Grievance</span>
               </h2>
               <p className="text-xs text-slate-500">
-                Official report handled confidentially under UK GDPR & Safeguarding standards.
+                Official report handled confidentially under UK GDPR & Safeguarding standards. Visible only to you ({activeHouseholdMember.name}).
               </p>
             </div>
             <span className="text-[11px] font-bold text-red-700 bg-red-50 border border-red-200 px-2.5 py-1 rounded-full">
-              Priority Vetted
+              Private & Vetted
             </span>
           </div>
 
@@ -109,7 +124,7 @@ export const ComplaintsSubmissionView: React.FC = () => {
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                 <div>
                   <strong className="block font-bold">Complaint Ticket Created!</strong>
-                  <span>Your report has been queued for immediate compliance officer review.</span>
+                  <span>Your private report has been queued for immediate compliance officer review.</span>
                 </div>
               </div>
               <button
@@ -255,24 +270,40 @@ export const ComplaintsSubmissionView: React.FC = () => {
               className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <Send className="w-4 h-4" />
-              <span>Submit Complaint for Compliance Vetting</span>
+              <span>Submit Private Complaint for Compliance Vetting</span>
             </button>
           </form>
         </div>
 
-        {/* Right: Complaints History & Status Tracker (5 Cols) */}
+        {/* Right: Complaints History & Status Tracker (5 Cols) — Strictly User's Own Complaints */}
         <div className="lg:col-span-5 space-y-4">
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <Clock className="w-4 h-4 text-emerald-700" />
-                <span>Active & Past Complaints ({complaints.length})</span>
-              </h3>
-              <span className="text-[10px] text-slate-500">Live Vetting Tracker</span>
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-emerald-700" />
+                  <span>My Private Complaints ({userVisibleComplaints.length})</span>
+                </h3>
+                <p className="text-[10px] text-slate-500 mt-0.5">
+                  🔒 Strictly private to {activeHouseholdMember.name} — hidden from all other users
+                </p>
+              </div>
+              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                Private View
+              </span>
             </div>
 
             <div className="space-y-3">
-              {complaints.map((comp) => {
+              {userVisibleComplaints.length === 0 ? (
+                <div className="p-6 rounded-2xl border border-dashed border-slate-200 text-center space-y-1.5 text-xs text-slate-500">
+                  <ShieldAlert className="w-6 h-6 text-slate-400 mx-auto" />
+                  <div className="font-bold text-slate-700">No Complaints Submitted by You</div>
+                  <p className="text-[11px] text-slate-500">
+                    For privacy and GDPR compliance, you can only view complaints submitted from your own account ({activeHouseholdMember.name}).
+                  </p>
+                </div>
+              ) : (
+                userVisibleComplaints.map((comp) => {
                 const isResolved =
                   comp.status === 'Resolved / Dismissed' ||
                   comp.status === 'Action Taken & Refund Issued';
@@ -324,7 +355,8 @@ export const ComplaintsSubmissionView: React.FC = () => {
                     )}
                   </div>
                 );
-              })}
+              })
+              )}
             </div>
           </div>
         </div>

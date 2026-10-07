@@ -524,21 +524,14 @@ export const MarketplaceDiscovery: React.FC = () => {
                       { d: 'Wed', status: 'Open', slots: '4 slots' },
                       { d: 'Thu', status: 'Open', slots: '2 slots' },
                       { d: 'Fri', status: 'Open', slots: '3 slots' },
-                      { d: 'Sat', status: 'Limited', slots: '1 slot' },
-                      { d: 'Sun', status: walker.id === 'walker_sarah_01' ? 'Rest' : 'Open', slots: walker.id === 'walker_sarah_01' ? 'Closed' : '2 slots' },
+                      { d: 'Sat', status: 'Open', slots: '2 slots' },
+                      { d: 'Sun', status: 'Open', slots: '2 slots' },
                     ].map((dayItem) => (
                       <button
                         key={dayItem.d}
                         type="button"
                         onClick={() => openBookingModal(walker)}
-                        disabled={dayItem.status === 'Rest'}
-                        className={`p-1 rounded-lg border transition-all ${
-                          dayItem.status === 'Rest'
-                            ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                            : dayItem.status === 'Limited'
-                            ? 'bg-amber-50 border-amber-200 text-amber-900 hover:bg-amber-100 cursor-pointer'
-                            : 'bg-white border-emerald-200 text-emerald-900 hover:bg-emerald-50 cursor-pointer'
-                        }`}
+                        className="p-1 rounded-lg border transition-all bg-white border-emerald-200 text-emerald-900 hover:bg-emerald-50 cursor-pointer"
                       >
                         <div className="font-bold">{dayItem.d}</div>
                         <div className="text-[8px] font-semibold opacity-80">{dayItem.slots}</div>
@@ -699,30 +692,28 @@ export const MarketplaceDiscovery: React.FC = () => {
                     <div key={`blank_${b}`} className="h-9 rounded-lg bg-slate-100/50" />
                   ))}
                   {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
-                    const isSunday = (day + 3) % 7 === 0;
-                    const isBookedOut = day === 11 || day === 18 || day === 25 || (isSunday && activeProfileWalker.id === 'walker_sarah_01');
-                    const isLimited = day === 3 || day === 10 || day === 17 || day === 24;
+                    const isWeekend = (day + 3) % 7 === 0 || (day + 3) % 7 === 6;
+                    const isLimited = day === 14 || day === 21;
                     return (
                       <button
                         key={day}
                         type="button"
-                        disabled={isBookedOut}
                         onClick={() => {
                           const target = activeProfileWalker;
                           setActiveProfileWalker(null);
                           openBookingModal(target);
                         }}
-                        className={`h-9 rounded-lg border text-[10px] font-bold flex flex-col items-center justify-center transition-all ${
-                          isBookedOut
-                            ? 'bg-rose-50/60 border-rose-200 text-rose-400 cursor-not-allowed line-through'
-                            : isLimited
-                            ? 'bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100 cursor-pointer'
-                            : 'bg-white border-emerald-200 text-emerald-950 hover:bg-[#0f5132] hover:text-white cursor-pointer'
+                        className={`h-9 rounded-lg border text-[10px] font-bold flex flex-col items-center justify-center transition-all cursor-pointer ${
+                          isLimited
+                            ? 'bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100'
+                            : isWeekend
+                              ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950 hover:bg-[#0f5132] hover:text-white'
+                              : 'bg-white border-emerald-200 text-emerald-950 hover:bg-[#0f5132] hover:text-white'
                         }`}
                       >
                         <span>{day}</span>
                         <span className="text-[8px] font-normal opacity-80">
-                          {isBookedOut ? 'Full' : isLimited ? '1 left' : 'Open'}
+                          {isLimited ? '1 left' : isWeekend ? 'Wknd Open' : 'Open'}
                         </span>
                       </button>
                     );

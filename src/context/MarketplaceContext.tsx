@@ -41,6 +41,7 @@ import {
   ServiceReview,
   ProfessionalSubscriptionTier,
 } from '../types';
+import { getCoordinatesForUkAddressAndPostcode } from '../services/googleMapsConfig';
 import {
   dispatchPushNotificationToCloud,
   subscribePushNotifications,
@@ -1803,6 +1804,14 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
 
     const feeAmount = ad.monthlyFee && ad.monthlyFee > 0 ? ad.monthlyFee : 9.99;
+    const resolvedCoords =
+      ad.coordinates ||
+      ad.mapCoordinates ||
+      getCoordinatesForUkAddressAndPostcode(
+        ad.address || '',
+        ad.postcode || ad.postcodeArea || 'NW3',
+        ad.businessName
+      );
 
     const newAd: LocalBusinessAd = {
       ...ad,
@@ -1813,6 +1822,8 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       rating: 5.0,
       reviewCount: 1,
       submittedDate: 'Today',
+      coordinates: resolvedCoords,
+      mapCoordinates: resolvedCoords,
     };
     setLocalBusinesses((prev) => [newAd, ...prev]);
 
@@ -1841,9 +1852,22 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const updateBusinessAd = (id: string, updates: Partial<LocalBusinessAd>) => {
     setLocalBusinesses((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, ...updates } : b))
+      prev.map((b) => {
+        if (b.id !== id) return b;
+        const merged = { ...b, ...updates };
+        if (updates.address || updates.postcode || updates.postcodeArea || !merged.coordinates) {
+          const nextCoords = getCoordinatesForUkAddressAndPostcode(
+            merged.address || '',
+            merged.postcode || merged.postcodeArea || 'NW3',
+            merged.businessName
+          );
+          merged.coordinates = nextCoords;
+          merged.mapCoordinates = nextCoords;
+        }
+        return merged;
+      })
     );
-    showToast(`Updated business profile & logo!`);
+    showToast(`Updated business profile & map position!`);
   };
 
   const reviewBusinessAd = (id: string, status: LocalBusinessAd['status']) => {

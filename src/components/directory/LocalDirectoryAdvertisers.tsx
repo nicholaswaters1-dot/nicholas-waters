@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { useMarketplace } from '../../context/MarketplaceContext';
 import { LocalBusinessAd, BusinessCategory } from '../../types';
 import { DogFriendlyGoogleMap } from '../maps/DogFriendlyGoogleMap';
-import { getCoordinatesForUkPostcode } from '../../services/googleMapsConfig';
+import {
+  getCoordinatesForUkPostcode,
+  getCoordinatesForUkAddressAndPostcode,
+} from '../../services/googleMapsConfig';
 import {
   Sparkles,
   MapPin,
@@ -149,16 +152,23 @@ export const LocalDirectoryAdvertisers: React.FC = () => {
 
     const cleanFullPostcode = newPostcode.trim().toUpperCase();
     const outcode = cleanFullPostcode.split(' ')[0] || 'NW3';
-    const mappedCoords = getCoordinatesForUkPostcode(cleanFullPostcode, newBizName);
+    const fullAddress = newAddress.includes(cleanFullPostcode)
+      ? newAddress.trim()
+      : `${newAddress.trim()}, ${cleanFullPostcode}`;
+    const mappedCoords = getCoordinatesForUkAddressAndPostcode(
+      fullAddress,
+      cleanFullPostcode,
+      newBizName
+    );
 
-    addBusinessAd({
+    const newAdPayload = {
       businessName: newBizName,
       category: newCategory,
       tagline: newTagline || 'Friendly local dog-welcoming establishment',
       description: newDescription || 'Dedicated professional pet-friendly venue.',
       postcode: cleanFullPostcode,
       postcodeArea: outcode,
-      address: newAddress.includes(cleanFullPostcode) ? newAddress : `${newAddress}, ${cleanFullPostcode}`,
+      address: fullAddress,
       phone: newPhone,
       website: newWebsite || 'https://mypawswalks.co.uk',
       logoUrl:
@@ -169,8 +179,8 @@ export const LocalDirectoryAdvertisers: React.FC = () => {
         'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=600&q=80',
       galleryPhotos: newGalleryPhotos.slice(0, 4),
       promoOffer: newPromo,
-      subscriptionTier: 'Pet Business Ad (£9.99/mo)',
-      billingCadence: 'Monthly',
+      subscriptionTier: 'Pet Business Ad (£9.99/mo)' as const,
+      billingCadence: 'Monthly' as const,
       monthlyFee: 9.99,
       paymentReceived: true,
       paymentMethod: `${paymentMethod} ${paymentMethod === 'Card / Direct Debit' ? `(•••• ${cardLast4})` : ''}`,
@@ -180,11 +190,26 @@ export const LocalDirectoryAdvertisers: React.FC = () => {
       mapCoordinates: mappedCoords,
       dogAmenities: parsedAmenities.length > 0 ? parsedAmenities : ['Water Bowls Provided', 'Dogs Welcome Inside'],
       featuredBadge: `Verified ${newCategory} Partner`,
+    };
+
+    addBusinessAd(newAdPayload);
+
+    // Ensure the map view is visible and pans directly to the newly added business coordinates
+    if (selectedPostcodeArea !== 'All' && selectedPostcodeArea !== outcode) {
+      setSelectedPostcodeArea('All');
+    }
+    if (viewMode === 'list') {
+      setViewMode('both');
+    }
+    setSelectedBusiness({
+      ...newAdPayload,
+      id: `biz_preview_${Date.now()}`,
+      status: 'Active',
     });
 
     if (createBusinessAccount && accountEmail.trim()) {
       showToast(
-        `Business Account created for ${ownerContactName} (${accountEmail}) & ${newBizName} positioned on map at ${cleanFullPostcode}!`,
+        `Business Account created for ${ownerContactName} (${accountEmail}) & ${newBizName} positioned on map at ${fullAddress}!`,
         'success'
       );
     }
