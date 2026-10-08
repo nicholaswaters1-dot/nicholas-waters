@@ -1,8 +1,11 @@
-node_modules/
-build/
-dist/
-coverage/
-.DS_Store
-*.log
-.env*
+
+# Android signing keys and credentials
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+keystore.properties
+.env
+.env.*
 !.env.example
